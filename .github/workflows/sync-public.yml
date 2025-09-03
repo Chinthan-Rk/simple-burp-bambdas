@@ -24,7 +24,7 @@ jobs:
       - name: Push private main -> public main (via PAT)
         env:
           PAT: ${{ secrets.PUBLIC_REPO_PAT }}
-          DST: ${{ vars.PUBLIC_REPO_HTTPS }}
+          DST: ${{ secrets.PUBLIC_REPO_HTTPS }}
         run: |
           # Inject PAT into HTTPS URL safely
           AUTH_DST="${DST/https:\/\//https:\/\/x-access-token:${PAT}@}"
