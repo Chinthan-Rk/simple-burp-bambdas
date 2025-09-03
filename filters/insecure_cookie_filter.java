@@ -17,6 +17,8 @@ if (!requestResponse.hasResponse()) {
 
 for (var h : requestResponse.response().headers()) {
     if (h.name().equalsIgnoreCase("Set-Cookie")) {
+
+        // if Secure or HttpOnly is missing
         String v = h.value().toLowerCase();
         if (!v.contains("secure") || !v.contains("httponly")) {
             return true;
