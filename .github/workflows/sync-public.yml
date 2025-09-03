@@ -1,8 +1,8 @@
-name: Mirror main to public repo
+name: Mirror to Public Repository
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -11,22 +11,33 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout private repo (full history)
+      - name: Checkout private repository (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Configure Git identity
         run: |
-          git config user.name "mirror-bot"
-          git config user.email "mirror-bot@users.noreply.github.com"
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
 
-      - name: Push private main -> public main (via PAT)
-        env:
-          PAT: ${{ secrets.PUBLIC_REPO_PAT }}
-          DST: ${{ secrets.PUBLIC_REPO_HTTPS }}
+      # 👇 Remove auth header set by checkout (prevents GITHUB_TOKEN override)
+      - name: Remove checkout auth header
         run: |
-          # Inject PAT into HTTPS URL safely
-          AUTH_DST="${DST/https:\/\//https:\/\/x-access-token:${PAT}@}"
-          # Force-update public main to match this commit exactly
-          git push "${AUTH_DST}" refs/heads/main:refs/heads/main --force
+          git config --global --unset-all http.https://github.com/.extraheader || true
+
+      - name: Mirror private main -> public main
+        env:
+          PUBLIC_REPO_PAT: ${{ secrets.PUBLIC_REPO_PAT }}
+        run: |
+          if [ -z "${PUBLIC_REPO_PAT}" ]; then
+            echo "ERROR: Missing PUBLIC_REPO_PAT secret"; exit 1
+          fi
+
+          PUBLIC_REPO_URL="https://x-access-token:${PUBLIC_REPO_PAT}@github.com/Chinthan-Rk/simple-burp-bambdas.git"
+
+          echo "Pushing to Chinthan-Rk/simple-burp-bambdas (branch: main)"
+          git remote remove public 2>/dev/null || true
+          git remote add public "${PUBLIC_REPO_URL}"
+
+          git push public refs/heads/main:refs/heads/main --force
