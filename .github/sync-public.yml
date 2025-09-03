@@ -1,0 +1,32 @@
+name: Mirror main to public repo
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private repo (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "mirror-bot"
+          git config user.email "mirror-bot@users.noreply.github.com"
+
+      - name: Push private main -> public main (via PAT)
+        env:
+          PAT: ${{ secrets.PUBLIC_REPO_PAT }}
+          DST: ${{ vars.PUBLIC_REPO_HTTPS }}
+        run: |
+          # Inject PAT into HTTPS URL safely
+          AUTH_DST="${DST/https:\/\//https:\/\/x-access-token:${PAT}@}"
+          # Force-update public main to match this commit exactly
+          git push "${AUTH_DST}" refs/heads/main:refs/heads/main --force
